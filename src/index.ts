@@ -1,68 +1,37 @@
 import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
-import { parse } from 'cookie';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
-import type { Socket, User } from './types';
+import type { Socket } from './types';
+import auth from './middleware/auth';
+import MiscellaneousHandler from './handlers/MiscellaneousHandler';
+import ConnectionHandler from './handlers/ConnectionHandler';
 
 dotenv.config();
 
+const corsOptions = {
+  origin: process.env.FRONTEND_URL,
+  credentials: true
+};
 const PORT = process.env.PORT ?? 3000;
+
 const app: Express = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  /* options */
-  cors: {
-    origin: 'http://localhost:3000',
-    credentials: true
-  },
+  cors: corsOptions,
 });
 
-io.use((socket: Socket, next) => {
-  const unauthorizedError = new Error('Unauthorized!');
-
-  if(!socket.request.headers.cookie) {
-    return next(unauthorizedError);
-  }
-
-  const cookie = parse(socket.request.headers.cookie);
-  const apiToken = cookie.api_token.slice(4);
-
-  if(!apiToken) {
-    return next(unauthorizedError);
-  }
-
-  fetch('http://localhost/api/user', {
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-      'Authorization': 'Bearer ' + apiToken
-    }
-  })
-    .then(response => {
-      if(response.status !== 200) {
-        throw unauthorizedError;
-      }
-      return response.json();
-    })
-    .then((data: User) => {
-      socket.data.user = data;
-      next();
-    })
-    .catch(err => {
-      console.error(err);
-      next(err);
-    });
-})
+io.use(auth);
 
 io.on('connection', (socket: Socket) => {
-  const user = socket.data.user;
+  const connectionHandler = ConnectionHandler.getInstance(socket);
+  const miscellaneousHandler = MiscellaneousHandler.getInstance(socket);
 
-  console.log('New user:', user.username);
+  // Connection
+  connectionHandler.onConnection();
 
-  socket.on('ping', () => {
-    console.log(socket.id + ' pinged!');
-    socket.emit('pong', user.username);
-  });
+  // Misc
+  socket.on('ping', () => miscellaneousHandler.onPing);
 });
 
 app.get('/', (req: Request, res: Response) => {

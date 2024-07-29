@@ -14,5 +14,5 @@ export type Socket = IOSocket<
   DefaultEventsMap,
   DefaultEventsMap,
   DefaultEventsMap,
-  { user: User }
+  { user: User; apiToken: string }
 >;
