@@ -1,4 +1,4 @@
-import type { Socket as IOSocket } from 'socket.io';
+import { Server, type Socket as IOSocket } from 'socket.io';
 import type { DefaultEventsMap } from 'socket.io/dist/typed-events';
 
 export type User = {
@@ -10,9 +10,21 @@ export type User = {
   updated_at: Date;
 };
 
+type SocketData = {
+  user: User;
+  apiToken: string;
+}
+
 export type Socket = IOSocket<
   DefaultEventsMap,
   DefaultEventsMap,
   DefaultEventsMap,
-  { user: User; apiToken: string }
+  SocketData
+>;
+
+export type IO = Server<
+  DefaultEventsMap,
+  DefaultEventsMap,
+  DefaultEventsMap,
+  SocketData
 >;

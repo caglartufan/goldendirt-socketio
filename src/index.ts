@@ -2,10 +2,10 @@ import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
-import type { Socket } from './types';
+import type { IO, Socket } from './types';
 import auth from './middleware/auth';
-import MiscellaneousHandler from './handlers/MiscellaneousHandler';
-import ConnectionHandler from './handlers/ConnectionHandler';
+import connectionHandlers from './handlers/connection';
+import miscHandlers from './handlers/misc';
 
 dotenv.config();
 
@@ -17,21 +17,21 @@ const PORT = process.env.PORT ?? 3000;
 
 const app: Express = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+const io: IO = new Server(httpServer, {
   cors: corsOptions,
 });
+
+const { onConnection } = connectionHandlers(io);
+const { pongBack } = miscHandlers(io);
 
 io.use(auth);
 
 io.on('connection', (socket: Socket) => {
-  const connectionHandler = ConnectionHandler.getInstance(socket);
-  const miscellaneousHandler = MiscellaneousHandler.getInstance(socket);
-
   // Connection
-  connectionHandler.onConnection();
+  onConnection.call(socket);
 
   // Misc
-  socket.on('ping', () => miscellaneousHandler.onPing);
+  socket.on('misc:ping', pongBack);
 });
 
 app.get('/', (req: Request, res: Response) => {
