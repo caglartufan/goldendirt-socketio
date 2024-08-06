@@ -15,8 +15,7 @@ const auth = (
   }
 
   const cookie = parse(socket.request.headers.cookie);
-  const apiToken = cookie.api_token?.slice(4);
-  console.log(apiToken);
+  const apiToken = cookie.api_token?.split('|')?.[1];
 
   if (!apiToken) {
     return next(unauthorizedError);

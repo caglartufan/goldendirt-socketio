@@ -21,7 +21,7 @@ const io: IO = new Server(httpServer, {
   cors: corsOptions,
 });
 
-const { onConnection } = connectionHandlers(io);
+const { onConnection, onDisconnect } = connectionHandlers(io);
 const { pongBack } = miscHandlers(io);
 
 io.use(auth);
@@ -29,6 +29,7 @@ io.use(auth);
 io.on('connection', (socket: Socket) => {
   // Connection
   onConnection.call(socket);
+  socket.on('disconnect', onDisconnect);
 
   // Misc
   socket.on('misc:ping', pongBack);
