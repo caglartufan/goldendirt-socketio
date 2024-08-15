@@ -22,7 +22,7 @@ const auth = (
   }
 
   axios
-    .get('/api/user', {
+    .get('/api/profile', {
       headers: {
         Authorization: 'Bearer ' + apiToken,
       },
